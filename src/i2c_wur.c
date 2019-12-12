@@ -26,7 +26,7 @@ void wur_i2c_init(void){
 uint8_t wur_set_address(uint16_t addr){
 	uint8_t addrBuf[2] = {0};
 	uint8_t reqByte = 0;
-	esp_err_t trans_result;
+	wur_errors_t trans_result;
 
 	reqByte |= (WUR_ADDR_REGISTER << 1);
 	reqByte |= 1;
@@ -36,7 +36,7 @@ uint8_t wur_set_address(uint16_t addr){
 	DEBUG_PRINT("Setting WuR Addr as 0x%02X%02X.\n", addrBuf[0], addrBuf[1]);
 
 	trans_result = i2c_com_write_register(I2C_SLAVE_ADDR, reqByte, addrBuf, 2);
-	if(trans_result != ESP_OK){
+	if(trans_result != WUR_OK){
 		DEBUG_PRINT("Error %d in write WUR addr.\n", trans_result);
 		return WUR_KO;
 	}
@@ -47,14 +47,14 @@ uint8_t wur_set_address(uint16_t addr){
 uint8_t wur_get_address(uint16_t* addr){
 	uint8_t addrBuf[2] = {0};
 	uint8_t reqByte = 0;
-	esp_err_t trans_result;
+	wur_errors_t trans_result;
 
 	reqByte |= (WUR_ADDR_REGISTER << 1);
 
 	DEBUG_PRINT("Getting WuR Addr.\n");
 
 	trans_result = i2c_com_read_register(I2C_SLAVE_ADDR, reqByte, addrBuf, 2);
-	if(trans_result != ESP_OK){
+	if(trans_result != WUR_OK){
 		DEBUG_PRINT("Error %d in read WUR addr.\n", trans_result);
 		return WUR_KO;
 	}
@@ -71,14 +71,14 @@ uint8_t wur_get_address(uint16_t* addr){
 uint8_t wur_get_status(i2c_wur_status_t* status){
 	uint8_t statusBuf[2] = {0};
 	uint8_t reqByte = 0;
-	esp_err_t trans_result;
+	wur_errors_t trans_result;
 
 	reqByte |= (WUR_STATUS_REGISTER << 1);
 
 	DEBUG_PRINT("Getting WuR status.\n");
 
 	trans_result = i2c_com_read_register(I2C_SLAVE_ADDR, reqByte, statusBuf, 2);
-	if(trans_result != ESP_OK){
+	if(trans_result != WUR_OK){
 		DEBUG_PRINT("Error %d in read WUR status.\n", trans_result);
 		return WUR_KO;
 	}
@@ -94,14 +94,14 @@ uint8_t wur_get_status(i2c_wur_status_t* status){
 
 uint8_t wur_get_frame(uint8_t* buffer, uint8_t len){
 	uint8_t reqByte = 0;
-	esp_err_t trans_result;
+	wur_errors_t trans_result;
 
 	reqByte |= (WUR_FRAME_REGISTER << 1);
 
 	DEBUG_PRINT("Getting WuR frame.\n");
 
 	trans_result = i2c_com_read_register(I2C_SLAVE_ADDR, reqByte, buffer, len);
-	if(trans_result != ESP_OK){
+	if(trans_result != WUR_OK){
 		DEBUG_PRINT("Error %d in read WUR frame buffer.\n", trans_result);
 		return WUR_KO;
 	}

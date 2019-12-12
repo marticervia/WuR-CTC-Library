@@ -104,6 +104,8 @@ void wur_init(uint16_t addr){
 
 	wur_set_address(addr);
 
+#ifdef USE_RTOS
+
 	//TODO: get a real tack priority
 	xTaskCreate(wur_tick_task,
 	            "wur_task",
@@ -112,16 +114,17 @@ void wur_init(uint16_t addr){
 	            24,
 	            NULL
 	         );
+#endif
 }
 
 void wur_tick(uint32_t systick){
 
-	xSemaphoreTakeRecursive(wur_mutex, portMAX_DELAY);
+	WuRRecursiveMutexTake(wur_mutex, WuRMaxDelayMS);
 
 	if(wur_context.wur_status == WUR_STATUS_WAIT_DATA_ACK){
 		if(systick - wur_context.tx_timestamp > WUR_DATA_TIMEOUT){
 			printf("Timeout to ack last data frame\n");
-			xSemaphoreGiveRecursive(wur_mutex);
+			WuRRecursiveMutexGive(wur_mutex);
 			if(wur_context.tx_cb){
 				wur_context.wur_status = WUR_STATUS_IDLE;
 				wur_context.tx_cb(WUR_ERROR_TX_ACK_DATA_TIMEOUT);
@@ -132,14 +135,14 @@ void wur_tick(uint32_t systick){
 		else{
 			uint32_t remaining_time = WUR_WAKE_TIMEOUT - (systick - wur_context.tx_timestamp);
 			
-			xSemaphoreGiveRecursive(wur_mutex);
-			xSemaphoreTake(wur_semaphore, remaining_time/WuRTickPeriodMS);
-			xSemaphoreTakeRecursive(wur_mutex, WuRTickPeriodMS);
+			WuRRecursiveMutexGive(wur_mutex);
+			WuRBinarySemaphoreTake(wur_semaphore, remaining_time/WuRTickPeriodMS);
+			WuRRecursiveMutexTake(wur_mutex, WuRMaxDelayMS);
 		}
 	}else if(wur_context.wur_status == WUR_STATUS_WAIT_WAKE_ACK){
 		if(systick - wur_context.tx_timestamp > WUR_WAKE_TIMEOUT){
 			printf("Timeout to ack last wake frame\n");
-			xSemaphoreGiveRecursive(wur_mutex);
+			WuRRecursiveMutexGive(wur_mutex);
 			if(wur_context.tx_cb){
 				wur_context.wur_status = WUR_STATUS_IDLE;
 				wur_context.tx_cb(WUR_ERROR_TX_ACK_WAKE_TIMEOUT);
@@ -149,15 +152,15 @@ void wur_tick(uint32_t systick){
 		}
 		else{
 			uint32_t remaining_time = WUR_WAKE_TIMEOUT - (systick - wur_context.tx_timestamp);
-			xSemaphoreGiveRecursive(wur_mutex);
-			xSemaphoreTake(wur_semaphore, remaining_time/WuRTickPeriodMS);
-			xSemaphoreTakeRecursive(wur_mutex, WuRTickPeriodMS);
+			WuRRecursiveMutexGive(wur_mutex);
+			WuRBinarySemaphoreTake(wur_semaphore, remaining_time/WuRTickPeriodMS);
+			WuRRecursiveMutexTake(wur_mutex, WuRMaxDelayMS);
 
 		}
 	}else{
-		xSemaphoreGiveRecursive(wur_mutex);
-		xSemaphoreTake(wur_semaphore, WUR_DEFAULT_TIMEOUT/WuRTickPeriodMS);
-		xSemaphoreTakeRecursive(wur_mutex, WuRTickPeriodMS);
+		WuRRecursiveMutexGive(wur_mutex);
+		WuRBinarySemaphoreTake(wur_semaphore, WUR_DEFAULT_TIMEOUT/WuRTickPeriodMS);
+		WuRRecursiveMutexTake(wur_mutex, WuRMaxDelayMS);
 	}
 
 	if(!wur_op_pending){
@@ -191,7 +194,7 @@ void wur_tick(uint32_t systick){
 
 	uint16_t addr;
 	memcpy(&addr, wur_context.frame_buffer, 2);
-	addr = ntohs(addr) >> 4;
+	addr = __ntohs(addr) >> 4;
 
 	/* check the frame flags! */
 	if(frame_type & ACK_FLAG){
@@ -232,7 +235,7 @@ void wur_tick(uint32_t systick){
 	wur_context.frame_len = 0;
 
 	exit:
-	xSemaphoreGiveRecursive(wur_mutex);
+	WuRRecursiveMutexGive(wur_mutex);
 }
 
 void wur_set_tx_cb(wur_tx_cb tx_cb){
@@ -247,7 +250,7 @@ wur_tx_res_t wur_send_wake(uint16_t addr, uint16_t ms){
 	ook_tx_errors_t tx_res;
 	wur_tx_res_t res;
 
-	xSemaphoreTakeRecursive(wur_mutex, WuRTickPeriodMS);
+	WuRRecursiveMutexTake(wur_mutex, WuRMaxDelayMS);
 
 	if(wur_context.wur_status != WUR_STATUS_IDLE){
 		res = WUR_ERROR_TX_BUSY;
@@ -267,7 +270,7 @@ wur_tx_res_t wur_send_wake(uint16_t addr, uint16_t ms){
 
 	res = WUR_ERROR_TX_OK;
 	exit:
-	xSemaphoreGiveRecursive(wur_mutex);
+	WuRRecursiveMutexGive(wur_mutex);
 	return res;
 }
 
@@ -275,7 +278,7 @@ wur_tx_res_t wur_send_data(uint16_t addr, uint8_t* data, uint8_t data_len, uint8
 	ook_tx_errors_t tx_res;
 	wur_tx_res_t res;
 
-	xSemaphoreTakeRecursive(wur_mutex, WuRTickPeriodMS);
+	WuRRecursiveMutexTake(wur_mutex, WuRMaxDelayMS);
 
 	if(wur_context.wur_status != WUR_STATUS_IDLE){
 		res = WUR_ERROR_TX_BUSY;
@@ -299,7 +302,7 @@ wur_tx_res_t wur_send_data(uint16_t addr, uint8_t* data, uint8_t data_len, uint8
 
 	res = WUR_ERROR_TX_OK;
 	exit:
-	xSemaphoreGiveRecursive(wur_mutex);
+	WuRRecursiveMutexGive(wur_mutex);
 	return res;
 }
 
@@ -309,7 +312,7 @@ wur_tx_res_t wur_send_ack(uint16_t addr, int8_t ack_seq_num){
 	wur_tx_res_t res;
 	//printf("Sending WuR ACK!\n");
 
-	xSemaphoreTakeRecursive(wur_mutex, WuRTickPeriodMS);
+	WuRRecursiveMutexTake(wur_mutex, WuRMaxDelayMS);
 
 	if(ack_seq_num < 0){
 		ack_seq_num = wur_context.expected_seq_num;
@@ -325,7 +328,10 @@ wur_tx_res_t wur_send_ack(uint16_t addr, int8_t ack_seq_num){
 	res = WUR_ERROR_TX_OK;
 
 	exit:
-	xSemaphoreGiveRecursive(wur_mutex);
+	WuRRecursiveMutexGive(wur_mutex);
 	return res;
 }
+
+
+
 

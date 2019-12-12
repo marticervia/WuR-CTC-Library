@@ -1,8 +1,8 @@
 #ifndef _LIB_CONF_H_
 #define _LIB_CONF_H_
 
-#define USE_ESP_VERSION
-//#define USE_EFR_VERSION
+//#define USE_ESP_VERSION
+#define USE_EFR_VERSION
 
 #if (defined USE_ESP_VERSION) && defined(USE_EFR_VERSION)
 #error "Only one target platform can be used."
@@ -29,6 +29,13 @@
 /* add common EFR_32 includes*/
 #ifdef USE_EFR_VERSION
 #define NO_RTOS
+
+#include "em_cmu.h"
+#include "ustimer.h"
+#include "hal-config.h"
+#include PLATFORM_HEADER
+#include CONFIGURATION_HEADER
+#include <stdio.h>
 #endif /*USE_EFR_VERSION*/
 
 
@@ -54,17 +61,19 @@
 #define WuRBinarySemaphoreHandle_t uint32_t
 #define WuRRecursiveMutexHandle_t uint32_t
 
-#define WuRBinarySemaphoreCreate() 
+#define WuRBinarySemaphoreCreate() 0
 #define WuRBinarySemaphoreGive(x) 
-#define WuRBinarySemaphoreTake(x) 
+#define WuRBinarySemaphoreTake(x, y)
 
-#define WuRRecursiveMutexCreate() 
+#define WuRRecursiveMutexCreate() 0
 #define WuRRecursiveMutexGive(x) 
-#define WuRRecursiveMutexTake(x) 
+#define WuRRecursiveMutexTake(x, y)
 
 #define WuRTaskCreate(task_function, task_name, stack_size, args_p, priority, task_handle) 
 
-#define WuRTickPeriodMS 0
+#define WuRTickPeriodMS 1
+
+#define WuRMaxDelayMS 1
 
 #endif /* USE_FREERTOS*/
 
