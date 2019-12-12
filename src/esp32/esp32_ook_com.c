@@ -53,6 +53,8 @@ typedef enum symbol_size{
 }symbol_size_t;
 
 
+struct wlan_wur_ctxt;
+
 typedef esp_err_t (*wlan_bit_set_fn_t)(struct wlan_wur_ctxt *ctxt, uint8_t value);
 
 typedef struct wlan_wur_ctxt{
@@ -178,6 +180,7 @@ static esp_err_t set_wifi_fixed_rate(wifi_phy_rate_t value)
 	return err;
 }
 
+/*
 static void print_wlan_frame(uint8_t* frame, uint16_t frame_len){
     int16_t i;
     printf("Frame is:\n\n");
@@ -193,7 +196,7 @@ static void print_wlan_frame(uint8_t* frame, uint16_t frame_len){
     }
     printf("%02x\n\n", frame[i]);
 }
-
+*/
 
 static void scramble_bytes(wlan_wur_ctxt_t *ctxt, uint16_t byte_len, uint8_t* payload){
 	uint8_t scrambler_state = ctxt->current_scrambler_state;
