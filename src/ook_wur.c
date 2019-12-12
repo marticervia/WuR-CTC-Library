@@ -89,7 +89,7 @@ ook_tx_errors_t ook_wur_wake(uint16_t dest, uint16_t ms_wake, uint8_t seq){
 
 	wake_frame[1] |= ((WAKE_FLAG) << 1) | seq;
 	wake_frame[2] = WUR_WAKE_LEN;
-	ms_wake = __htons(ms_wake);
+	ms_wake = htons(ms_wake);
 	memcpy(&wake_frame[3], &ms_wake, 2);
 
 	return _ook_wur_transmit(wake_frame, WUR_WAKE_LEN + WUR_HEADER_LEN);

@@ -194,7 +194,7 @@ void wur_tick(uint32_t systick){
 
 	uint16_t addr;
 	memcpy(&addr, wur_context.frame_buffer, 2);
-	addr = __ntohs(addr) >> 4;
+	addr = ntohs(addr) >> 4;
 
 	/* check the frame flags! */
 	if(frame_type & ACK_FLAG){

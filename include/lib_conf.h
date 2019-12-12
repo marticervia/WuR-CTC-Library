@@ -1,8 +1,8 @@
 #ifndef _LIB_CONF_H_
 #define _LIB_CONF_H_
 
-//#define USE_ESP_VERSION
-#define USE_EFR_VERSION
+#define USE_ESP_VERSION
+//#define USE_EFR_VERSION
 
 #if (defined USE_ESP_VERSION) && defined(USE_EFR_VERSION)
 #error "Only one target platform can be used."
@@ -36,6 +36,8 @@
 #include PLATFORM_HEADER
 #include CONFIGURATION_HEADER
 #include <stdio.h>
+#define ntohs(x) __ntohs(x)
+#define htons(x) __htons(x)
 #endif /*USE_EFR_VERSION*/
 
 
@@ -55,6 +57,7 @@
 #define WuRTaskCreate(task_function, task_name, stack_size, args_p, priority, task_handle) xTaskCreate(task_function, task_name, stack_size, args_p, priority, task_handle)
 
 #define WuRTickPeriodMS portTICK_PERIOD_MS
+#define WuRMaxDelayMS portMAX_DELAY
 
 #else /* USE_FREERTOS */
 
