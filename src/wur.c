@@ -47,7 +47,7 @@ static IRAM_ATTR void wur_int_handler(void* arg)
 	BaseType_t xTaskWokenByReceive = pdTRUE;
     uint32_t gpio_num = (uint32_t) arg;
     if(gpio_num == GPIO_WAKE){
-		wur_op_pending = 1;
+		wur_op_pending = true;
 		xSemaphoreGiveFromISR(wur_semaphore, &xTaskWokenByReceive);
 		portYIELD_FROM_ISR();
     }
@@ -104,7 +104,7 @@ void wur_init(uint16_t addr){
 
 	wur_set_address(addr);
 
-#ifdef USE_RTOS
+#ifdef USE_FREERTOS
 
 	//TODO: get a real tack priority
 	xTaskCreate(wur_tick_task,
@@ -134,7 +134,6 @@ void wur_tick(uint32_t systick){
 		}
 		else{
 			uint32_t remaining_time = WUR_WAKE_TIMEOUT - (systick - wur_context.tx_timestamp);
-			
 			WuRRecursiveMutexGive(wur_mutex);
 			WuRBinarySemaphoreTake(wur_semaphore, remaining_time/WuRTickPeriodMS);
 			WuRRecursiveMutexTake(wur_mutex, WuRMaxDelayMS);
@@ -163,20 +162,13 @@ void wur_tick(uint32_t systick){
 		WuRRecursiveMutexTake(wur_mutex, WuRMaxDelayMS);
 	}
 
-	if(!wur_op_pending){
-		printf("WuR Idle timeout!\n");
-		goto exit;
-	}
-
 	wur_op_pending = false;
 	i2c_wur_status_t wurx_state;
 	if(wur_get_status(&wurx_state) != WUR_OK){
 		printf("Warning: failed to get state from WuR after interrupt!\n");
 		goto exit;
 	}
-
 	if(wurx_state.wur_status != WURX_HAS_FRAME){
-		printf("Warning: Woke up without frame available!\n");
 		goto exit;
 	}
 

@@ -78,6 +78,12 @@ typedef struct wlan_wur_ctxt{
 static portMUX_TYPE wlanGroupMux = portMUX_INITIALIZER_UNLOCKED;	
 #endif
 
+#define SIGNAL_OUTPUT_GPIO GPIO_NUM_5
+#define SET_OUTPUT GPIO.out_w1ts = 0x00000010
+#define CLEAR_OUTPUT GPIO.out_w1tc = 0x00000010
+
+
+
 static wlan_wur_ctxt_t wur_ctxt = {0};
 
 /* bits are: [1,1,0,0,1,1,1,0,1,0,1,1,0,1,0,1,0,0,0,0,0,0,0,0], from first = MSB to LSB*/
@@ -341,6 +347,10 @@ esp_err_t wlan_wur_init_context(wlan_wur_ctxt_t *wur_context, uint8_t initial_st
     /* Set the GPIO as a push/pull output */
     gpio_set_direction(OUTPUT_GPIO, GPIO_MODE_OUTPUT);
 #endif
+	gpio_pad_select_gpio(SIGNAL_OUTPUT_GPIO);
+    /* Set the GPIO as a push/pull output */
+    gpio_set_direction(SIGNAL_OUTPUT_GPIO, GPIO_MODE_OUTPUT);
+
     return ESP_OK;
 }
 
@@ -410,7 +420,6 @@ esp_err_t IRAM_ATTR wlan_wur_transmit_frame(wlan_wur_ctxt_t *wur_context, uint8_
 	if(res != ESP_OK){
 		printf("Failed to sand frame of len %d because of %d.\n", wur_context->current_len, res);
 	}
-	printf("Successfully sent frame of len %d!\n", wur_context->current_len);
 #else
     CLEAR_OUTPUT;
     portEXIT_CRITICAL(&wlanGroupMux);
@@ -420,9 +429,12 @@ esp_err_t IRAM_ATTR wlan_wur_transmit_frame(wlan_wur_ctxt_t *wur_context, uint8_
 
 
 wur_errors_t IRAM_ATTR ook_wur_transmit_frame(uint8_t* data_bytes, uint8_t data_bytes_len){
+	GPIO_OUTPUT_SET(SIGNAL_OUTPUT_GPIO, 1);
 	if(wlan_wur_transmit_frame(&wur_ctxt, data_bytes, data_bytes_len) != ESP_OK){
+		GPIO_OUTPUT_SET(SIGNAL_OUTPUT_GPIO, 0);
 		return WUR_KO;
 	}
+	GPIO_OUTPUT_SET(SIGNAL_OUTPUT_GPIO, 0);	
 	return WUR_OK;
 }
 
