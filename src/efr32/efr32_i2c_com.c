@@ -63,7 +63,7 @@ static inline I2C_TransferReturn_TypeDef _i2c_com_master_transfer(uint8_t i2c_sl
 	I2C_TransferReturn_TypeDef result;
 
 	// Initializing I2C transfer
-	i2cTransfer.addr          = i2c_slave_addr;
+	i2cTransfer.addr          = (i2c_slave_addr << 1);
 	i2cTransfer.flags         = i2c_mode;
 	i2cTransfer.buf[0].data   = buffer_1;
 	i2cTransfer.buf[0].len    = buffer_1_len;
@@ -89,6 +89,7 @@ wur_errors_t i2c_com_write_register(uint8_t i2c_slave_addr, uint8_t reg_addr, ui
     GPIO_PinOutSet(WuR_I2C_WAKE_PORT, WuR_I2C_WAKE_LOC);
     USTIMER_Delay(10);
     GPIO_PinOutClear(WuR_I2C_WAKE_PORT, WuR_I2C_WAKE_LOC);
+
 
 	i2c_trans_res = _i2c_com_master_transfer(i2c_slave_addr, I2C_FLAG_WRITE, reg_buffer,1, NULL, 0);
 	if(i2c_trans_res != i2cTransferDone){

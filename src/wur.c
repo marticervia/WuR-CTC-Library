@@ -54,6 +54,13 @@ static IRAM_ATTR void wur_int_handler(void* arg)
 }
 #endif
 
+#ifdef USE_EFR_VERSION
+/* handles the interruption genrated by the WUR GPIO pin. */
+void wur_int_handler(uint8_t interrupt){
+  wur_op_pending = 1;
+}
+#endif
+
 #ifdef USE_FREERTOS
 static void wur_tick_task(void* args){
 	printf("Wur Tick task started!\n");
@@ -81,6 +88,13 @@ void wur_init(uint16_t addr){
     gpio_install_isr_service(ESP_INTR_FLAG_DEFAULT);
     //hook isr handler for specific gpio pin
     gpio_isr_handler_add(GPIO_WAKE, wur_int_handler, (void*) GPIO_WAKE);
+#endif
+#ifdef USE_EFR_VERSION
+	/* prepare WuR interrupt pin*/
+	GPIO_PinModeSet(WuR_INT_WAKE_PORT, WuR_INT_WAKE_LOC, gpioModeInputPullFilter, 1);
+	GPIOINT_Init();
+	GPIOINT_CallbackRegister(WuR_INT_WAKE_LOC, wur_int_handler);
+	GPIO_ExtIntConfig(WuR_INT_WAKE_PORT, WuR_INT_WAKE_LOC, WuR_INT_WAKE_LOC, 1, 0, true);
 #endif
 
     wur_semaphore = WuRBinarySemaphoreCreate();
@@ -162,8 +176,27 @@ void wur_tick(uint32_t systick){
 		WuRRecursiveMutexTake(wur_mutex, WuRMaxDelayMS);
 	}
 
-	wur_op_pending = false;
 	i2c_wur_status_t wurx_state;
+
+#ifdef USE_EFR_VERSION
+	if(!wur_op_pending){
+		if(systick % 10000 == 0){
+			emberAfCorePrintln("[%d]: Device IDLE, asking for WuR status", systick);
+			if(wur_get_status(&wurx_state) != WUR_OK){
+				printf("Warning: failed to get state from WuR after interrupt!\n");
+				goto exit;
+			}
+			if(wurx_state.wur_status != WURX_HAS_FRAME){
+				goto exit;
+			}
+			goto get_frame;
+		}else{
+			goto exit;
+		}
+	}
+#endif
+
+	wur_op_pending = false;
 	if(wur_get_status(&wurx_state) != WUR_OK){
 		printf("Warning: failed to get state from WuR after interrupt!\n");
 		goto exit;
@@ -172,6 +205,7 @@ void wur_tick(uint32_t systick){
 		goto exit;
 	}
 
+	get_frame:
 	if(wur_get_frame(wur_context.frame_buffer, wurx_state.wur_frame_len) != WUR_OK){
 		printf("Warning: failed to get frame from WuR!\n");
 		goto exit;

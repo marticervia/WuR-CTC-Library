@@ -191,6 +191,11 @@ wur_errors_t ook_wur_init_context(void)
   }
   emberAfCorePrintln("--------- Configured OOK RAIL! -----------");
 
+  GPIO_PinModeSet(WuR_FRAME_PORT, WuR_FRAME_LOC, gpioModePushPull, 0);
+
+  ook_wur_ctxt.tx_status = OOK_WUR_TX_STATUS_IDLE;
+  ook_wur_ctxt.tx_result = OOK_WUR_TX_ERROR_SUCCESS;
+
   return WUR_OK;
 }
 
@@ -209,6 +214,7 @@ static wur_errors_t _do_ook_wur_transmit_frame(uint8_t* data, uint8_t len){
 	}
 
 	if(RAIL_StartCcaCsmaTx(railHandle, channel, 0, &csmaTxConf, &scheduleTxInfo) == RAIL_STATUS_NO_ERROR){
+	  GPIO_PinOutSet(WuR_FRAME_PORT, WuR_FRAME_LOC);
 	  return WUR_OK;
 	} else {
 	  emberAfCorePrintln("----------- Send ERROR %d! ------------", ires);
@@ -224,7 +230,7 @@ wur_errors_t ook_wur_transmit_frame(uint8_t* data, uint8_t len){
 	}
 
 	ook_wur_ctxt.tx_status = OOK_WUR_TX_STATUS_BUSY;
-
+	print_frame(data, len);
 	res = _do_ook_wur_transmit_frame(data, len);
 	if(res != WUR_OK){
 		ook_wur_ctxt.tx_status = OOK_WUR_TX_STATUS_IDLE;
@@ -335,6 +341,7 @@ void RAILCb_Generic(RAIL_Handle_t railHandle, RAIL_Events_t events)
 	ook_wur_callback(OOK_WUR_TX_ERROR_FAILED);
 	halToggleLed(LED_TX);
   }
+  GPIO_PinOutClear(WuR_FRAME_PORT, WuR_FRAME_LOC);
   RAIL_YieldRadio(railHandle);
 }
 

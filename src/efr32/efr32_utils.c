@@ -15,11 +15,11 @@ uint32_t get_timestamp_ms(void) {
 void print_frame(uint8_t* buffer, uint8_t buffer_len){
 	uint16_t i;
 
-	printf("0x");
+	emberAfCorePrint("0x");
 	for(i = 0; i < buffer_len - 1; i++){
-		printf("%02X:", buffer[i]);
+		emberAfCorePrint("%01X:", buffer[i]);
 	}
-	printf("%02X\n", buffer[i]);
+	emberAfCorePrint("%01X\n", buffer[i]);
 }
 
 #endif
