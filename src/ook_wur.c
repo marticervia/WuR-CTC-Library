@@ -123,9 +123,10 @@ ook_tx_errors_t ook_wur_data(uint16_t dest, uint8_t* data, uint8_t len, bool ack
 	return _ook_wur_transmit(data_frame, len + WUR_HEADER_LEN);
 }
 
-static uint8_t ack_buffer[6];
 
 ook_tx_errors_t ook_wur_ack(uint16_t dest, uint8_t seq){
+	uint8_t ack_buffer[7] = {0};
+
 	return ook_wur_data(dest, ack_buffer, 0, true, seq);
 }
 

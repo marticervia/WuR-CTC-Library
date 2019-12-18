@@ -230,7 +230,6 @@ wur_errors_t ook_wur_transmit_frame(uint8_t* data, uint8_t len){
 	}
 
 	ook_wur_ctxt.tx_status = OOK_WUR_TX_STATUS_BUSY;
-	print_frame(data, len);
 	res = _do_ook_wur_transmit_frame(data, len);
 	if(res != WUR_OK){
 		ook_wur_ctxt.tx_status = OOK_WUR_TX_STATUS_IDLE;
