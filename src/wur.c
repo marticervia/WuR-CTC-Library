@@ -205,7 +205,9 @@ void wur_tick(uint32_t systick){
 		goto exit;
 	}
 
+#ifdef USE_EFR_VERSION
 	get_frame:
+#endif
 	if(wur_get_frame(wur_context.frame_buffer, wurx_state.wur_frame_len) != WUR_OK){
 		printf("Warning: failed to get frame from WuR!\n");
 		goto exit;
