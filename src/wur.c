@@ -115,7 +115,6 @@ void wur_init(uint16_t addr){
 	memset(wur_context.frame_buffer, 0, FRAME_BUF_LEN);
 	wur_context.frame_len = 0;
 	wur_context.wur_addr = addr;
-
 	wur_set_address(addr);
 
 #ifdef USE_FREERTOS
@@ -147,7 +146,7 @@ void wur_tick(uint32_t systick){
 			return;
 		}
 		else{
-			uint32_t remaining_time = WUR_WAKE_TIMEOUT - (systick - wur_context.tx_timestamp);
+			uint32_t remaining_time = WUR_DATA_TIMEOUT - (systick - wur_context.tx_timestamp);
 			WuRRecursiveMutexGive(wur_mutex);
 			WuRBinarySemaphoreTake(wur_semaphore, remaining_time/WuRTickPeriodMS);
 			WuRRecursiveMutexTake(wur_mutex, WuRMaxDelayMS);
@@ -217,12 +216,14 @@ void wur_tick(uint32_t systick){
 	//print_frame(wur_context.frame_buffer, wurx_state.wur_frame_len);
 
 	wur_context.frame_len = wurx_state.wur_frame_len;
-	uint8_t frame_type = (wur_context.frame_buffer[1] & 0x0E) >> 1;
-	uint8_t seq_num = wur_context.frame_buffer[1] & 0x01;
+	uint8_t frame_type = (wur_context.frame_buffer[2] & 0x0E) >> 1;
+	uint8_t seq_num = wur_context.frame_buffer[2] & 0x01;
 
-	uint16_t addr;
-	memcpy(&addr, wur_context.frame_buffer, 2);
-	addr = ntohs(addr) >> 4;
+	uint16_t src_addr;
+	memcpy(&src_addr, &wur_context.frame_buffer[1], 2);
+	src_addr = ntohs(src_addr);
+	src_addr = (src_addr >> 4);
+	src_addr &= 0x03FF;	
 
 	/* check the frame flags! */
 	if(frame_type & ACK_FLAG){
@@ -253,7 +254,7 @@ void wur_tick(uint32_t systick){
 		}
 		if(!(frame_type & ACK_FLAG)){
 			//printf("Acknowledge DATA frame to 0x%02X!\n", addr);
-			wur_send_ack(addr, seq_num);
+			wur_send_ack(src_addr, seq_num);
 		}
 	}else{
 		printf("Got FLAGless frame! (protocol error?)\n");
@@ -285,7 +286,7 @@ wur_tx_res_t wur_send_wake(uint16_t addr, uint16_t ms){
 		goto exit;
 	}
 
-	tx_res = ook_wur_wake(addr, ms, wur_context.expected_seq_num);
+	tx_res = ook_wur_wake(addr, wur_context.wur_addr, ms, wur_context.expected_seq_num);
 	if(tx_res != OOK_WUR_TX_ERROR_SUCCESS){
 		printf("Warning: failed to start WAKE transmission!\n");
 		wur_context.wur_status = WUR_STATUS_IDLE;
@@ -317,7 +318,7 @@ wur_tx_res_t wur_send_data(uint16_t addr, uint8_t* data, uint8_t data_len, uint8
 		ack_seq_num = wur_context.expected_seq_num;
 	}
 
-	tx_res = ook_wur_data(addr, data, data_len, is_ack, ack_seq_num);
+	tx_res = ook_wur_data(addr, wur_context.wur_addr, data, data_len, is_ack, ack_seq_num);
 	if(tx_res != OOK_WUR_TX_ERROR_SUCCESS){
 		printf("Warning: failed to start DATA transmission!\n");
 		wur_context.wur_status = WUR_STATUS_IDLE;
@@ -346,7 +347,7 @@ wur_tx_res_t wur_send_ack(uint16_t addr, int8_t ack_seq_num){
 		ack_seq_num = wur_context.expected_seq_num;
 	}
 
-	tx_res = ook_wur_ack(addr, ack_seq_num);
+	tx_res = ook_wur_ack(addr, wur_context.wur_addr, ack_seq_num);
 	if(tx_res != OOK_WUR_TX_ERROR_SUCCESS){
 		printf("Warning: failed to start ACK transmission!\n");
 		res = WUR_ERROR_TX_FAILED;

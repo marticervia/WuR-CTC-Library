@@ -30,7 +30,7 @@ uint8_t wur_set_address(uint16_t addr){
 
 	reqByte |= (WUR_ADDR_REGISTER << 1);
 	reqByte |= 1;
-	addrBuf[0] = (addr & 0x0F00) >> 8;
+	addrBuf[0] = (addr & 0x0300) >> 8;
 	addrBuf[1] = addr & 0x00FF;
 
 	DEBUG_PRINT("Setting WuR Addr as 0x%02X%02X.\n", addrBuf[0], addrBuf[1]);
@@ -62,7 +62,7 @@ uint8_t wur_get_address(uint16_t* addr){
 	DEBUG_PRINT("Read WuR Addr as 0x%01X%01X.\n", addrBuf[0], addrBuf[1]);
 
 	*addr = 0;
-	*addr |= (addrBuf[0] & 0x0F) << 8;
+	*addr |= (addrBuf[0] & 0x03) << 8;
 	*addr |= addrBuf[1];
 
 	return WUR_OK;

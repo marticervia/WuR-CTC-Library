@@ -12,7 +12,7 @@
 #include "lib_conf.h"
 
 #define WUR_WAKE_LEN 2
-#define WUR_HEADER_LEN 4 //4 bytes with CRC
+#define WUR_HEADER_LEN 5 //5 bytes with CRC
 #define WUR_MAX_DATA_LEN 89
 #define WUR_MAX_DATA_LEN 89
 
@@ -43,8 +43,8 @@ typedef enum ook_tx_errors{
 
 void ook_wur_init(void);
 
-ook_tx_errors_t ook_wur_wake(uint16_t dest, uint16_t ms_wake, uint8_t seq);
-ook_tx_errors_t ook_wur_data(uint16_t dest, uint8_t* data, uint8_t len, bool ack, uint8_t seq);
-ook_tx_errors_t ook_wur_ack(uint16_t dest, uint8_t seq);
+ook_tx_errors_t ook_wur_wake(uint16_t dest, uint16_t src, uint16_t ms_wake, uint8_t seq);
+ook_tx_errors_t ook_wur_data(uint16_t dest, uint16_t src, uint8_t* data, uint8_t len, bool ack, uint8_t seq);
+ook_tx_errors_t ook_wur_ack(uint16_t dest, uint16_t src, uint8_t seq);
 
 #endif /* OOK_WUR_H_ */

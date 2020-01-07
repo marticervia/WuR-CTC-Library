@@ -79,24 +79,26 @@ void ook_wur_init(void){
 	ook_wur_init_context();
 }
 
-ook_tx_errors_t ook_wur_wake(uint16_t dest, uint16_t ms_wake, uint8_t seq){
-	uint8_t wake_frame[5] = {0};
-
+ook_tx_errors_t ook_wur_wake(uint16_t dest, uint16_t src, uint16_t ms_wake, uint8_t seq){
+	uint8_t wake_frame[8] = {0};
 
 	//printf("Sending OOK wake frame to addr %02X .\n", dest);
+	/* first address, already in network order */
+	wake_frame[0] = (uint8_t)((dest & 0x03FC) >> 2);
+	wake_frame[1] = (uint8_t)((dest & 0x0003) << 6);
 
-	wake_frame[0] = (uint8_t)(dest & 0x00FF);
-	wake_frame[1] = (uint8_t)((dest & 0x0F00) >> 4);
+	wake_frame[1] |= (uint8_t)((src & 0x03F0) >> 4);
+	wake_frame[2] = (uint8_t)((src & 0x000F) << 4);
 
-	wake_frame[1] |= ((WAKE_FLAG) << 1) | seq;
-	wake_frame[2] = WUR_WAKE_LEN;
+	wake_frame[2] |= ((WAKE_FLAG) << 1) | seq;
+	wake_frame[3] = WUR_WAKE_LEN;
 	ms_wake = htons(ms_wake);
-	memcpy(&wake_frame[3], &ms_wake, 2);
+	memcpy(&wake_frame[4], &ms_wake, 2);
 
 	return _ook_wur_transmit(wake_frame, WUR_WAKE_LEN + WUR_HEADER_LEN);
 }
 
-ook_tx_errors_t ook_wur_data(uint16_t dest, uint8_t* data, uint8_t len, bool ack, uint8_t seq){
+ook_tx_errors_t ook_wur_data(uint16_t dest, uint16_t src, uint8_t* data, uint8_t len, bool ack, uint8_t seq){
 	uint8_t data_frame[WUR_MAX_DATA_LEN] = {0};
 	uint8_t flags = 0;
 
@@ -106,8 +108,11 @@ ook_tx_errors_t ook_wur_data(uint16_t dest, uint8_t* data, uint8_t len, bool ack
 
 	//printf("Sending OOK data frame to addr %02X with len %d.\n", dest, len);
 
-	data_frame[0] = (uint8_t)(dest & 0x00FF);
-	data_frame[1] = (uint8_t)((dest & 0x0F00) >> 4);
+	data_frame[0] = (uint8_t)((dest & 0x03FC) >> 2);
+	data_frame[1] = (uint8_t)((dest & 0x0003) << 6);
+
+	data_frame[1] |= (uint8_t)((src & 0x03F0) >> 4);
+	data_frame[2] = (uint8_t)((src & 0x000F) << 4);
 
 	/* set type and seq flag */
 	flags |= DATA_FLAG;
@@ -115,19 +120,18 @@ ook_tx_errors_t ook_wur_data(uint16_t dest, uint8_t* data, uint8_t len, bool ack
 		flags |= ACK_FLAG;
 	}
 
-	data_frame[1] |= (flags << 1) | seq;
-	data_frame[2] = len;
+	data_frame[2] |= (flags << 1) | seq;
+	data_frame[3] = len;
 
-	memcpy(&data_frame[3], data, len);
+	memcpy(&data_frame[4], data, len);
 
 	return _ook_wur_transmit(data_frame, len + WUR_HEADER_LEN);
 }
 
 
-ook_tx_errors_t ook_wur_ack(uint16_t dest, uint8_t seq){
-	uint8_t ack_buffer[7] = {0};
-
-	return ook_wur_data(dest, ack_buffer, 0, true, seq);
+ook_tx_errors_t ook_wur_ack(uint16_t dest, uint16_t src, uint8_t seq){
+	uint8_t ack_buffer[8] = {0};
+	return ook_wur_data(dest, src, ack_buffer, 0, true, seq);
 }
 
 
