@@ -147,6 +147,7 @@ void wur_tick(uint32_t systick){
 		}
 		else{
 			uint32_t remaining_time = WUR_DATA_TIMEOUT - (systick - wur_context.tx_timestamp);
+			printf("Wur waits %d ms for a DATA ACK\n", remaining_time);
 			WuRRecursiveMutexGive(wur_mutex);
 			WuRBinarySemaphoreTake(wur_semaphore, remaining_time/WuRTickPeriodMS);
 			WuRRecursiveMutexTake(wur_mutex, WuRMaxDelayMS);
@@ -164,6 +165,7 @@ void wur_tick(uint32_t systick){
 		}
 		else{
 			uint32_t remaining_time = WUR_WAKE_TIMEOUT - (systick - wur_context.tx_timestamp);
+			printf("Wur waits %d ms for a WAKE ACK\n", remaining_time);
 			WuRRecursiveMutexGive(wur_mutex);
 			WuRBinarySemaphoreTake(wur_semaphore, remaining_time/WuRTickPeriodMS);
 			WuRRecursiveMutexTake(wur_mutex, WuRMaxDelayMS);
@@ -194,7 +196,9 @@ void wur_tick(uint32_t systick){
 		}
 	}
 #endif
-
+	if(!wur_op_pending){
+		goto exit;
+	}
 	wur_op_pending = false;
 	if(wur_get_status(&wurx_state) != WUR_OK){
 		printf("Warning: failed to get state from WuR after interrupt!\n");
@@ -298,6 +302,8 @@ wur_tx_res_t wur_send_wake(uint16_t addr, uint16_t ms){
 	wur_context.wur_status = WUR_STATUS_WAIT_WAKE_ACK;
 
 	res = WUR_ERROR_TX_OK;
+	WuRBinarySemaphoreGive(wur_semaphore);
+
 	exit:
 	WuRRecursiveMutexGive(wur_mutex);
 	return res;
@@ -330,6 +336,8 @@ wur_tx_res_t wur_send_data(uint16_t addr, uint8_t* data, uint8_t data_len, uint8
 	wur_context.wur_status = WUR_STATUS_WAIT_DATA_ACK;
 
 	res = WUR_ERROR_TX_OK;
+	WuRBinarySemaphoreGive(wur_semaphore);
+
 	exit:
 	WuRRecursiveMutexGive(wur_mutex);
 	return res;
