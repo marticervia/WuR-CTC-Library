@@ -229,17 +229,25 @@ wur_errors_t ook_wur_transmit_frame(uint8_t* data, uint8_t len){
 		return WUR_KO;
 	}
 
-	ook_wur_ctxt.tx_status = OOK_WUR_TX_STATUS_BUSY;
-	res = _do_ook_wur_transmit_frame(data, len);
-	if(res != WUR_OK){
-		ook_wur_ctxt.tx_status = OOK_WUR_TX_STATUS_IDLE;
-		return WUR_KO;
+	int8_t retry = 3;
+	while(retry > 0){
+		ook_wur_ctxt.tx_status = OOK_WUR_TX_STATUS_BUSY;
+		res = _do_ook_wur_transmit_frame(data, len);
+		if(res != WUR_OK){
+			ook_wur_ctxt.tx_status = OOK_WUR_TX_STATUS_IDLE;
+			return WUR_KO;
+		}
+
+		/* busy wait until transmission (at most a few ms) */
+		while(ook_wur_ctxt.tx_status == OOK_WUR_TX_STATUS_BUSY);
+		if(ook_wur_ctxt.tx_result == OOK_WUR_TX_ERROR_SUCCESS){
+			return WUR_OK;
+		}
+		retry--;
 	}
 
-	/* busy wait until transmission (at most a few ms) */
-	while(ook_wur_ctxt.tx_status == OOK_WUR_TX_STATUS_BUSY);
+	return WUR_KO;
 
-	return WUR_OK;
 }
 
 /******************************************************************************
@@ -323,12 +331,12 @@ void RAILCb_Generic(RAIL_Handle_t railHandle, RAIL_Events_t events)
   }
   if( events & RAIL_EVENT_TX_CHANNEL_BUSY){
 	RAIL_ResetFifo(railHandle, true, false);
-	ook_wur_callback(OOK_WUR_TX_ERROR_BUSY);
+	ook_wur_callback(OOK_WUR_TX_ERROR_FAILED);
 	halToggleLed(LED_TX);
   }
   if (events & RAIL_EVENT_TX_ABORTED) {
 	RAIL_ResetFifo(railHandle, true, false);
-	ook_wur_callback(OOK_WUR_TX_ERROR_BUSY);
+	ook_wur_callback(OOK_WUR_TX_ERROR_FAILED);
 	halToggleLed(LED_TX);
   }
   if (events & RAIL_EVENT_TX_PACKET_SENT) {
