@@ -248,10 +248,10 @@ void wur_tick(uint32_t systick){
 			}
 		}
 	}
-	else if((frame_type & DATA_FLAG) || (frame_type & WAKE_FLAG)){
+	else if((frame_type & DATA_FLAG)){
 		//printf("Got DATA or WAKE!\n");
 		/* an ack can piggiback a response frame, so continue*/
-		if((wur_context.frame_len > 3) && wur_context.rx_cb){
+		if((wur_context.frame_len > 4) && wur_context.rx_cb){
 			//printf("parse DATA!\n");
 			wur_context.rx_cb(WUR_ERROR_RX_OK, wur_context.frame_buffer, wur_context.frame_len);
 			wur_context.rx_timestamp = systick;
@@ -260,7 +260,27 @@ void wur_tick(uint32_t systick){
 			//printf("Acknowledge DATA frame to 0x%02X!\n", addr);
 			wur_send_ack(src_addr, seq_num);
 		}
-	}else{
+	}
+	/* answer wake frames not with ACK, but with another wake frame.*/
+	else if(frame_type & WAKE_FLAG){
+		if(wur_context.wur_status != WUR_STATUS_WAIT_WAKE_ACK && wur_context.frame_len > 6){
+			uint16_t wakems;
+			int32_t res;
+			memcpy(&wakems, &wur_context.frame_buffer[4], 2);
+			wakems = ntohs(wakems);
+			res = wur_send_wake(src_addr, wakems);
+			if(res != WUR_ERROR_TX_OK){
+				printf("Wur error sending 3 way-hanshake ACK WAKE ACK\n");
+			}
+		}
+		else if(wur_context.wur_status == WUR_STATUS_WAIT_WAKE_ACK){
+			wur_context.wur_status = WUR_STATUS_IDLE;
+			wur_context.tx_cb(WUR_ERROR_TX_OK);
+			wur_context.expected_seq_num ^= 1;
+			wur_send_ack(src_addr, seq_num);
+		}
+	}
+	else{
 		printf("Got FLAGless frame! (protocol error?)\n");
 	}
 
