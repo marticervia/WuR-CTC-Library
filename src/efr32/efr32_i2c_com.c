@@ -83,6 +83,7 @@ static inline I2C_TransferReturn_TypeDef _i2c_com_master_transfer(uint8_t i2c_sl
 wur_errors_t i2c_com_write_register(uint8_t i2c_slave_addr, uint8_t reg_addr, uint8_t *write_buf, uint16_t write_buf_len){
 	uint8_t reg_buffer[1];
 	I2C_TransferReturn_TypeDef i2c_trans_res;
+    USTIMER_Delay(30);
 
 	reg_buffer[0] = reg_addr;
 
@@ -110,6 +111,7 @@ wur_errors_t i2c_com_write_register(uint8_t i2c_slave_addr, uint8_t reg_addr, ui
 wur_errors_t i2c_com_read_register(uint8_t i2c_slave_addr, uint8_t reg_addr, uint8_t *read_buf, uint16_t read_buf_len){
 	uint8_t reg_buffer[1];
 	I2C_TransferReturn_TypeDef i2c_trans_res;
+    USTIMER_Delay(30);
 
 	reg_buffer[0] = reg_addr;
 
