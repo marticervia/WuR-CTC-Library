@@ -142,9 +142,14 @@ wur_errors_t i2c_com_write_register(uint8_t i2c_slave_addr, uint8_t reg_addr, ui
   wur_errors_t res;
 
   for(uint8_t retry = 0; retry < ESP32_I2C_MAX_RETRIES; retry++){
+
+    ets_delay_us(50);
+
     gpio_set_level(I2C_WAKEUP_GPIO, 1);
     I2C_WAKEUP;
     gpio_set_level(I2C_WAKEUP_GPIO, 0);
+
+    ets_delay_us(50);
 
     res = _i2c_com_master_transfer(i2c_slave_addr, I2C_FLAG_WRITE, reg_addr, write_buf, write_buf_len);
     if(res == WUR_OK){
@@ -161,9 +166,14 @@ wur_errors_t i2c_com_read_register(uint8_t i2c_slave_addr, uint8_t reg_addr, uin
   wur_errors_t res;
 
   for(uint8_t retry = 0; retry < ESP32_I2C_MAX_RETRIES; retry++){
+
+    ets_delay_us(50);
+
     gpio_set_level(I2C_WAKEUP_GPIO, 1);
     I2C_WAKEUP;
     gpio_set_level(I2C_WAKEUP_GPIO, 0);
+
+    ets_delay_us(50);
 
     res = _i2c_com_master_transfer(i2c_slave_addr, I2C_FLAG_READ, reg_addr, read_buf, read_buf_len);
     if(res == WUR_OK){

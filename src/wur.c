@@ -41,13 +41,20 @@ static WuRBinarySemaphoreHandle_t wur_semaphore;
 static WuRRecursiveMutexHandle_t wur_mutex;
 
 #ifdef USE_ESP_VERSION
+
+#define DEBOUNCING_INTERVAL 1
+/* prototype appears to need some debouncing on ESP side.*/
+volatile static uint32_t interrupt_timestamp = 0;
+
 /* handles the interruption genrated by the WUR GPIO pin. */
 static IRAM_ATTR void wur_int_handler(void* arg)
 {
 	BaseType_t xTaskWokenByReceive = pdTRUE;
     uint32_t gpio_num = (uint32_t) arg;
-    if(gpio_num == GPIO_WAKE){
+	uint32_t timestamp = get_timestamp_ms();
+    if(gpio_num == GPIO_WAKE && (( timestamp - interrupt_timestamp) > DEBOUNCING_INTERVAL)){
 		wur_op_pending = true;
+		interrupt_timestamp = timestamp;
 		xSemaphoreGiveFromISR(wur_semaphore, &xTaskWokenByReceive);
 		portYIELD_FROM_ISR();
     }
@@ -205,6 +212,7 @@ void wur_tick(uint32_t systick){
 		goto exit;
 	}
 	if(wurx_state.wur_status != WURX_HAS_FRAME){
+		printf("Warning: woken up without frame!\n");
 		goto exit;
 	}
 
@@ -213,6 +221,7 @@ void wur_tick(uint32_t systick){
 #endif
 	if(wur_get_frame(wur_context.frame_buffer, wurx_state.wur_frame_len) != WUR_OK){
 		printf("Warning: failed to get frame from WuR!\n");
+		wur_op_pending = false;
 		goto exit;
 	}
 
