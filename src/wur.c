@@ -154,7 +154,6 @@ void wur_tick(uint32_t systick){
 		}
 		else{
 			uint32_t remaining_time = WUR_DATA_TIMEOUT - (systick - wur_context.tx_timestamp);
-			printf("Wur waits %d ms for a DATA ACK\n", remaining_time);
 			WuRRecursiveMutexGive(wur_mutex);
 			WuRBinarySemaphoreTake(wur_semaphore, remaining_time/WuRTickPeriodMS);
 			WuRRecursiveMutexTake(wur_mutex, WuRMaxDelayMS);
@@ -241,37 +240,47 @@ void wur_tick(uint32_t systick){
 	/* check the frame flags! */
 	if(frame_type & ACK_FLAG){
 		if(wur_context.expected_seq_num == seq_num){
-			if(wur_context.tx_cb){
-				//printf("Got ACK!\n");
 				wur_context.wur_status = WUR_STATUS_IDLE;
-				wur_context.tx_cb(WUR_ERROR_TX_OK);
 				wur_context.expected_seq_num ^= 1;
+				memset(wur_context.frame_buffer, 0, FRAME_BUF_LEN);
+				wur_context.frame_len = 0;
+
+			if(wur_context.tx_cb){
+				printf("Got ACK!\n");
+				WuRRecursiveMutexGive(wur_mutex);
+				wur_context.tx_cb(WUR_ERROR_TX_OK);
 			}
 		}
 		else{
 			if(wur_context.tx_cb){
-				//printf("Got NACK!\n");
-				wur_context.wur_status = WUR_STATUS_IDLE;
-				wur_context.tx_cb(WUR_ERROR_TX_NACK);
-				wur_context.expected_seq_num ^= 1;
+				printf("Got NACK!\n");
 			}
 		}
 	}
 	else if((frame_type & DATA_FLAG)){
-		//printf("Got DATA or WAKE!\n");
-		/* an ack can piggiback a response frame, so continue*/
-		if((wur_context.frame_len > 4) && wur_context.rx_cb){
-			//printf("parse DATA!\n");
-			wur_context.rx_cb(WUR_ERROR_RX_OK, wur_context.frame_buffer, wur_context.frame_len);
-			wur_context.rx_timestamp = systick;
-		}
+		uint8_t tmp_buf[FRAME_BUF_LEN];
+		uint16_t tmp_len = wur_context.frame_len;
+		memcpy(tmp_buf, wur_context.frame_buffer, wur_context.frame_len);
+		memset(wur_context.frame_buffer, 0, FRAME_BUF_LEN);
+		wur_context.frame_len = 0;
+		wur_context.rx_timestamp = systick;
 		if(!(frame_type & ACK_FLAG)){
 			//printf("Acknowledge DATA frame to 0x%02X!\n", addr);
 			wur_send_ack(src_addr, seq_num);
 		}
+
+		//printf("Got DATA or WAKE!\n");
+		/* an ack can piggiback a response frame, so continue*/
+		if((tmp_len > 4) && wur_context.rx_cb){
+			WuRRecursiveMutexGive(wur_mutex);
+			//printf("parse DATA!\n");
+			wur_context.rx_cb(WUR_ERROR_RX_OK, tmp_buf, tmp_len);
+		}
+		return;
 	}
 	/* answer wake frames not with ACK, but with another wake frame.*/
 	else if(frame_type & WAKE_FLAG){
+		/* we are woken!*/
 		if(wur_context.wur_status != WUR_STATUS_WAIT_WAKE_ACK && wur_context.frame_len > 6){
 			uint16_t wakems;
 			int32_t res;
@@ -281,20 +290,22 @@ void wur_tick(uint32_t systick){
 			if(res != WUR_ERROR_TX_OK){
 				printf("Wur error sending 3 way-hanshake ACK WAKE ACK\n");
 			}
+			memset(wur_context.frame_buffer, 0, FRAME_BUF_LEN);
+			wur_context.frame_len = 0;
 		}
+		/* we are waking!*/
 		else if(wur_context.wur_status == WUR_STATUS_WAIT_WAKE_ACK){
 			wur_context.wur_status = WUR_STATUS_IDLE;
-			wur_context.tx_cb(WUR_ERROR_TX_OK);
 			wur_context.expected_seq_num ^= 1;
 			wur_send_ack(src_addr, seq_num);
+			WuRRecursiveMutexGive(wur_mutex);
+			wur_context.tx_cb(WUR_ERROR_TX_OK);
 		}
 	}
 	else{
-		printf("Got FLAGless frame! (protocol error?)\n");
+		memset(wur_context.frame_buffer, 0, FRAME_BUF_LEN);
+		wur_context.frame_len = 0;
 	}
-
-	memset(wur_context.frame_buffer, 0, FRAME_BUF_LEN);
-	wur_context.frame_len = 0;
 
 	exit:
 	WuRRecursiveMutexGive(wur_mutex);

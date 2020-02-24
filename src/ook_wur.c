@@ -49,7 +49,7 @@ static uint8_t _ook_calculate_crc8(uint8_t* payload, uint8_t payload_len){
 static ook_tx_errors_t _ook_wur_transmit(uint8_t* data, uint8_t len){
 	wur_errors_t wur_res;
 	uint8_t crc8;
-	uint16_t i;
+	//uint16_t i;
 
 	/*printf("Calculate CRC of data with len %d:\n", len);
 	printf("0x");

@@ -9,9 +9,7 @@
 #include <sys/time.h>
 
 uint32_t get_timestamp_ms(void) {
-	struct timeval tv;
-	gettimeofday(&tv, NULL);
-	return (uint32_t)(tv.tv_sec * 1000LL + (tv.tv_usec / 1000LL));
+	return (uint32_t)esp_timer_get_time()/1000;
 }
 
 void print_frame(uint8_t* buffer, uint8_t buffer_len){
