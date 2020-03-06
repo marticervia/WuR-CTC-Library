@@ -91,7 +91,7 @@ wur_errors_t i2c_com_write_register(uint8_t i2c_slave_addr, uint8_t reg_addr, ui
     USTIMER_Delay(10);
     GPIO_PinOutClear(WuR_I2C_WAKE_PORT, WuR_I2C_WAKE_LOC);
 
-    USTIMER_Delay(30);
+    USTIMER_Delay(50);
 
 	i2c_trans_res = _i2c_com_master_transfer(i2c_slave_addr, I2C_FLAG_WRITE, reg_buffer,1, NULL, 0);
 	if(i2c_trans_res != i2cTransferDone){
@@ -119,7 +119,7 @@ wur_errors_t i2c_com_read_register(uint8_t i2c_slave_addr, uint8_t reg_addr, uin
     USTIMER_Delay(10);
     GPIO_PinOutClear(WuR_I2C_WAKE_PORT, WuR_I2C_WAKE_LOC);
 
-    USTIMER_Delay(30);
+    USTIMER_Delay(50);
 
 	i2c_trans_res = _i2c_com_master_transfer(i2c_slave_addr, I2C_FLAG_WRITE, reg_buffer,1, NULL, 0);
 	if(i2c_trans_res != i2cTransferDone){

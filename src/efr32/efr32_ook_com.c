@@ -86,7 +86,7 @@ static volatile ook_wur_ctxt_t ook_wur_ctxt;
 #define MAX_BUFFER_SIZE  256
 
 // Minimum allowed size of the TX FIFO
-#define RAIL_TX_FIFO_SIZE 64
+#define RAIL_TX_FIFO_SIZE 128
 #define DEFAULT_RAIL_FRAME_SIZE 15
 
 // General application memory sizes
