@@ -246,14 +246,14 @@ void wur_tick(uint32_t systick){
 				wur_context.frame_len = 0;
 
 			if(wur_context.tx_cb){
-				printf("Got ACK!\n");
+				//printf("Got ACK!\n");
 				WuRRecursiveMutexGive(wur_mutex);
 				wur_context.tx_cb(WUR_ERROR_TX_OK);
 			}
 		}
 		else{
 			if(wur_context.tx_cb){
-				printf("Got NACK!\n");
+				//printf("Got NACK!\n");
 			}
 		}
 	}
