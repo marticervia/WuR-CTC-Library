@@ -1,10 +1,33 @@
+/*
+MIT License
+
+Copyright (c) 2020 marticervia
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
 
 /*
  * ook_wur.c
  *
- *  Created on: 29 jul. 2019
  *      Author: marti
  */
+
 
 #include "lib_conf.h"
 
@@ -49,22 +72,10 @@ static uint8_t _ook_calculate_crc8(uint8_t* payload, uint8_t payload_len){
 static ook_tx_errors_t _ook_wur_transmit(uint8_t* data, uint8_t len){
 	wur_errors_t wur_res;
 	uint8_t crc8;
-	//uint16_t i;
-
-	/*printf("Calculate CRC of data with len %d:\n", len);
-	printf("0x");
-	for(i = 0; i < len -2; i++){
-		printf("%02X:", data[i]);
-	}
-	printf("%02X\n", data[i]);
-	*/
 
 	crc8 = _ook_calculate_crc8(data, len - 1);
 	//printf("Got CRC of %02X.\n", crc8);
 	data[len-1] = crc8; 
-
-	//printf("Send frame:\n");
-	//print_frame(data, len);
 
 	wur_res = ook_wur_transmit_frame(data, len);
 	if(wur_res != WUR_OK){
