@@ -50,7 +50,7 @@ void i2c_com_init(void){
 	I2C0->ROUTELOC0 = (I2C0->ROUTELOC0 & (~_I2C_ROUTELOC0_SDALOC_MASK)) | I2C_ROUTELOC0_SDALOC_LOC16;
 	I2C0->ROUTELOC0 = (I2C0->ROUTELOC0 & (~_I2C_ROUTELOC0_SCLLOC_MASK)) | I2C_ROUTELOC0_SCLLOC_LOC14;
 
-	i2cInit.freq = 430000;
+	i2cInit.freq = I2C_FREQ_FAST_MAX;
 	I2C_Init(I2C0, &i2cInit);
 
 }
@@ -83,56 +83,54 @@ static inline I2C_TransferReturn_TypeDef _i2c_com_master_transfer(uint8_t i2c_sl
 wur_errors_t i2c_com_write_register(uint8_t i2c_slave_addr, uint8_t reg_addr, uint8_t *write_buf, uint16_t write_buf_len){
 	uint8_t reg_buffer[1];
 	I2C_TransferReturn_TypeDef i2c_trans_res;
-    USTIMER_Delay(30);
+    USTIMER_Delay(50);
 
 	reg_buffer[0] = reg_addr;
 
     GPIO_PinOutSet(WuR_I2C_WAKE_PORT, WuR_I2C_WAKE_LOC);
-    USTIMER_Delay(10);
+    USTIMER_Delay(5);
     GPIO_PinOutClear(WuR_I2C_WAKE_PORT, WuR_I2C_WAKE_LOC);
 
-    USTIMER_Delay(50);
+    USTIMER_Delay(150);
 
 	i2c_trans_res = _i2c_com_master_transfer(i2c_slave_addr, I2C_FLAG_WRITE, reg_buffer,1, NULL, 0);
 	if(i2c_trans_res != i2cTransferDone){
 		return WUR_KO;
 	}
 
-    USTIMER_Delay(50);
+    USTIMER_Delay(80);
 
     i2c_trans_res = _i2c_com_master_transfer(i2c_slave_addr, I2C_FLAG_WRITE, write_buf, write_buf_len, NULL, 0);
     if(i2c_trans_res != i2cTransferDone){
     	return WUR_KO;
     }
-    USTIMER_Delay(30);
     return WUR_OK;
 }
 
 wur_errors_t i2c_com_read_register(uint8_t i2c_slave_addr, uint8_t reg_addr, uint8_t *read_buf, uint16_t read_buf_len){
 	uint8_t reg_buffer[1];
 	I2C_TransferReturn_TypeDef i2c_trans_res;
-    USTIMER_Delay(30);
+    USTIMER_Delay(50);
 
 	reg_buffer[0] = reg_addr;
 
     GPIO_PinOutSet(WuR_I2C_WAKE_PORT, WuR_I2C_WAKE_LOC);
-    USTIMER_Delay(10);
+    USTIMER_Delay(5);
     GPIO_PinOutClear(WuR_I2C_WAKE_PORT, WuR_I2C_WAKE_LOC);
 
-    USTIMER_Delay(50);
+    USTIMER_Delay(150);
 
 	i2c_trans_res = _i2c_com_master_transfer(i2c_slave_addr, I2C_FLAG_WRITE, reg_buffer,1, NULL, 0);
 	if(i2c_trans_res != i2cTransferDone){
-		return -8;
+		return WUR_KO;
 	}
 
-    USTIMER_Delay(50);
+    USTIMER_Delay(80);
 
     i2c_trans_res = _i2c_com_master_transfer(i2c_slave_addr, I2C_FLAG_READ, read_buf, read_buf_len, NULL, 0);
     if(i2c_trans_res != i2cTransferDone){
     	return WUR_KO;
     }
-    USTIMER_Delay(30);
     return WUR_OK;
 
 }

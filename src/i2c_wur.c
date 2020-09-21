@@ -78,10 +78,10 @@ uint8_t wur_get_status(i2c_wur_status_t* status){
 	DEBUG_PRINT("Getting WuR status.\n");
 
 	trans_result = i2c_com_read_register(I2C_SLAVE_ADDR, reqByte, statusBuf, 2);
-	if(trans_result != WUR_OK){
-		DEBUG_PRINT("Error %d in read WUR status.\n", trans_result);
-		return WUR_KO;
-	}
+	//if(trans_result != WUR_OK){
+		//DEBUG_PRINT("Error %d in read WUR status.\n", trans_result);
+		//return WUR_KO;
+	//}
 
 	DEBUG_PRINT("Read WuR Status as 0x%02X%02X.\n", statusBuf[0], statusBuf[1]);
 

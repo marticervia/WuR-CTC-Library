@@ -100,7 +100,7 @@ static volatile ook_wur_ctxt_t ook_wur_ctxt;
     /* csmaMinBoExp */ 4,   /* 2^4-1 for 0..15 backoffs on 1st try           */ \
     /* csmaMaxBoExp */ 8,   /* 2^8-1 for 0..255 backoffs on 4rd+ tries       */ \
     /* csmaTries    */ 7,   /* 5 tries overall (4 re-tries)                 */ \
-    /* ccaThreshold */ -82, /* Sensitivity for 6mbps OFDM                   */ \
+    /* ccaThreshold */ -62, /* Sensitivity for 6mbps OFDM                   */ \
     /* ccaBackoff   */ 20, /*  Slot time for mixed mode IEEE 802.11g        */ \
     /* ccaDuration  */ 15, /*  As specified on IEEE 802.11-2003.
     / * TODO: correct it for EFR32 radio turnaround times.                 */ \
